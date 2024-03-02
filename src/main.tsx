@@ -24,23 +24,30 @@ const settingsSchema: SettingSchemaDesc[] = [
   // ... You can define more settings here
 ];
 
-function main() {
+async function main() {
   console.info(`#${pluginId}: MAIN`);
   const root = ReactDOM.createRoot(document.getElementById("app")!);
 
+  // Use Logseq's API to load the settings schema
   logseq.useSettingsSchema(settingsSchema);
-  
-  const settings = logseq.settings;
 
-  document.addEventListener('keydown', (event) => {
-    // Check if the pressed key combination matches the user-configured hotkey
-    if (event.ctrlKey && event.shiftKey && event.code === 'KeyE') {
-      // Prevent the default action to avoid conflicts
-      event.preventDefault();
-      
-      // Insert the emoji at the current cursor location
-      logseq.Editor.insertAtEditingCursor('😀');
-    }
+  // Wait for Logseq to provide the settings
+  await logseq.ready();
+
+  // Check if the settings have been loaded
+  const hotkey = logseq.settings?.hotkey || 'Ctrl+Shift+E'; // Provide a default value
+
+  // Register the command with the hotkey from the settings
+  logseq.App.registerCommandPalette({
+    key: 'insert-emoji',
+    label: 'Insert an emoji',
+    keybinding: {
+      mode: 'global',
+      binding: hotkey,
+    },
+  }, () => {
+    // Insert the emoji at the current cursor location
+    logseq.Editor.insertAtEditingCursor('😀');
   });
 
   root.render(
