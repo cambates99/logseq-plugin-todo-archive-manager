@@ -1,4 +1,5 @@
 import "@logseq/libs";
+import { SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin.user";
 
 import React from "react";
 import * as ReactDOM from "react-dom/client";
@@ -12,9 +13,35 @@ const css = (t, ...args) => String.raw(t, ...args);
 
 const pluginId = PL.id;
 
+const settingsSchema: SettingSchemaDesc[] = [
+  {
+    key: "hotkey",
+    type: "string",
+    default: "Ctrl+Shift+E",
+    title: "Hotkey to insert emoji",
+    description: "The hotkey to insert an emoji into the current block."
+  }
+  // ... You can define more settings here
+];
+
 function main() {
   console.info(`#${pluginId}: MAIN`);
   const root = ReactDOM.createRoot(document.getElementById("app")!);
+
+  logseq.useSettingsSchema(settingsSchema);
+  
+  const settings = logseq.settings;
+
+  document.addEventListener('keydown', (event) => {
+    // Check if the pressed key combination matches the user-configured hotkey
+    if (event.ctrlKey && event.shiftKey && event.code === 'KeyE') {
+      // Prevent the default action to avoid conflicts
+      event.preventDefault();
+      
+      // Insert the emoji at the current cursor location
+      logseq.Editor.insertAtEditingCursor('😀');
+    }
+  });
 
   root.render(
     <React.StrictMode>
