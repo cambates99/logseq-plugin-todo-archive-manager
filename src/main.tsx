@@ -15,13 +15,13 @@ const pluginId = PL.id;
 
 const settingsSchema: SettingSchemaDesc[] = [
   {
-    key: "hotkey",
-    type: "string",
-    default: "Ctrl+Shift+E",
-    title: "Hotkey to insert emoji",
-    description: "The hotkey to insert an emoji into the current block."
+    key: "navigateToArchiveHotkey",
+    type: "object",
+    default: "ctrl+shift+e",
+    title: "Hotkey to navigate to Archive",
+    description: "The hotkey to navigate to your Archive page."
   }
-  // ... You can define more settings here
+  // ... other settings
 ];
 
 async function main() {
@@ -35,19 +35,24 @@ async function main() {
   await logseq.ready();
 
   // Check if the settings have been loaded
-  const hotkey = logseq.settings?.hotkey || 'Ctrl+Shift+E'; // Provide a default value
+  const pageLocation = 'TODO Archive';
 
-  // Register the command with the hotkey from the settings
+  // Register the command with the hotkey from the settings to navigate to the page
+  const navigateToArchiveHotkey = logseq.settings?.navigateToArchiveHotkey || { modifiers: ["ctrl", "shift"], key: "e" };
+
   logseq.App.registerCommandPalette({
-    key: 'insert-emoji',
-    label: 'Insert an emoji',
+    key: 'navigate-to-archive',
+    label: 'Navigate to Archive',
     keybinding: {
       mode: 'global',
-      binding: hotkey,
+      binding: `${settingsSchema[0].default}`,
     },
-  }, () => {
-    // Insert the emoji at the current cursor location
-    logseq.Editor.insertAtEditingCursor('😀');
+  }, async () => {
+    // Navigate to the specified page
+    const page = await logseq.Editor.getPage(pageLocation);
+    if (page != null) {
+      logseq.Editor.openInRightSidebar(page.uuid);
+    }
   });
 
   root.render(
