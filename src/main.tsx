@@ -40,6 +40,11 @@ async function main() {
   // Register the command with the hotkey from the settings to navigate to the page
   const navigateToArchiveHotkey = logseq.settings?.navigateToArchiveHotkey || { modifiers: ["ctrl", "shift"], key: "e" };
 
+
+  // logseq.DB.onBlockChanged(({ blockId, oldBlock, newBlock }) => {
+  //   logseq.UI.showMsg(`Block ${blockId} changed`);
+  // });
+
   logseq.App.registerCommandPalette({
     key: 'navigate-to-archive',
     label: 'Navigate to Archive',
@@ -48,13 +53,20 @@ async function main() {
       binding: `${settingsSchema[0].default}`,
     },
   }, async () => {
-    // Navigate to the specified page
-    const page = await logseq.Editor.getPage(pageLocation);
-    if (page != null) {
-      logseq.Editor.openInRightSidebar(page.uuid);
+    // Get the current block being edited
+    const currentBlock = await logseq.Editor.getCurrentBlock();
+    if (currentBlock != null) {
+      // Open the current block in the right sidebar
+      if (currentBlock.parent != null) {
+        const parentBlock = await logseq.Editor.getBlock(currentBlock.parent.id);
+        logseq.Editor.openInRightSidebar(parentBlock ? parentBlock.uuid : 'error ');
+      }
+      else
+        logseq.Editor.openInRightSidebar(currentBlock.uuid);
     }
+    logseq.UI.showMsg(`Result: ${currentBlock?.parent} Id ${currentBlock?.parent.id}`);
   });
-
+ 
   root.render(
     <React.StrictMode>
       <App />
