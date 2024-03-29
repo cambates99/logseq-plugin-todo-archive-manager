@@ -1,5 +1,5 @@
 import "@logseq/libs";
-import { SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin.user";
+import { BlockEntity, IDatom, SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin.user";
 
 import React from "react";
 import * as ReactDOM from "react-dom/client";
@@ -7,6 +7,7 @@ import App from "./App";
 import "./index.css";
 
 import { logseq as PL } from "../package.json";
+import { UUID } from "crypto";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -23,6 +24,35 @@ const settingsSchema: SettingSchemaDesc[] = [
   }
   // ... other settings
 ];
+
+// async function handleBlockChange(currentBlockUuid: string) {
+
+//   // get currentBlock's parent entity if exists
+//   const parentBlockId = currentBlock.parent ? currentBlock.parent.id : currentBlock.id;
+//   const parentBlock = await logseq.Editor.getBlock(parentBlockId);
+
+//   if (parentBlock == null) { logseq.UI.showMsg('No Parent Found'); }
+//   else
+//     logseq.Editor.openInRightSidebar(currentBlock.uuid);
+// }
+
+// TODO: Add Doing and Done valdiation; TODO: Maybe check the beggning of the line to help performance?
+async function processOnChangedEvent({ blocks, txData, txMeta }: {
+  blocks: BlockEntity[];
+  txData: IDatom[];
+  txMeta?: { [key: string]: any; outlinerOp: string; } | undefined;
+}) {
+
+  // Return early if we didn't save to DB
+  if (txMeta?.outlinerOp !== 'save-block') { return; }
+
+  const todoBlocks = blocks.filter(block => block.content && block.content.includes('TODO'));
+  if (todoBlocks.length > 0) {
+    console.log('TODO blocks detected:', todoBlocks);
+  } else {
+    console.log('No TODO blocks detected in the save-block operation.');
+  }
+}
 
 async function main() {
   console.info(`#${pluginId}: MAIN`);
@@ -41,9 +71,11 @@ async function main() {
   const navigateToArchiveHotkey = logseq.settings?.navigateToArchiveHotkey || { modifiers: ["ctrl", "shift"], key: "e" };
 
 
-  // logseq.DB.onBlockChanged(({ blockId, oldBlock, newBlock }) => {
-  //   logseq.UI.showMsg(`Block ${blockId} changed`);
-  // });
+  let blockArray = [];
+
+  logseq.DB.onChanged((e) => {
+    processOnChangedEvent(e);
+  });
 
   logseq.App.registerCommandPalette({
     key: 'navigate-to-archive',
@@ -54,17 +86,24 @@ async function main() {
     },
   }, async () => {
     // Get the current block being edited
-    const currentBlock = await logseq.Editor.getCurrentBlock();
-    if (currentBlock != null) {
-      // Open the current block in the right sidebar
-      if (currentBlock.parent != null) {
-        const parentBlock = await logseq.Editor.getBlock(currentBlock.parent.id);
-        logseq.Editor.openInRightSidebar(parentBlock ? parentBlock.uuid : 'error ');
-      }
-      else
-        logseq.Editor.openInRightSidebar(currentBlock.uuid);
-    }
-    logseq.UI.showMsg(`Result: ${currentBlock?.parent} Id ${currentBlock?.parent.id}`);
+    // const currentBlock = await logseq.Editor.getCurrentBlock();
+    // if (currentBlock != null) {
+    //   // Open the current block in the right sidebar
+    //   if (currentBlock.parent != null) {
+    //     const parentBlock = await logseq.Editor.getBlock(currentBlock.parent.id);
+    //     logseq.Editor.openInRightSidebar(parentBlock ? parentBlock.uuid : 'error ');
+    //   }
+    //   else
+    //     logseq.Editor.openInRightSidebar(currentBlock.uuid);
+    // }
+    // logseq.UI.showMsg(`Result: ${currentBlock?.parent} Id ${currentBlock?.parent.id}`);
+
+
+
+
+    // const currentBlock = await logseq.Editor.getCurrentBlock();
+    // console.log('uuid: ', currentBlock?.uuid);
+    // console.log('content: ', currentBlock?.content);
   });
  
   root.render(
