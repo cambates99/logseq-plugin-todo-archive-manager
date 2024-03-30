@@ -1,5 +1,5 @@
 import "@logseq/libs";
-import { BlockEntity, IDatom, SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin.user";
+import { BlockEntity, BlockUUIDTuple, IDatom, SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin.user";
 
 import React from "react";
 import * as ReactDOM from "react-dom/client";
@@ -42,16 +42,61 @@ async function processOnChangedEvent({ blocks, txData, txMeta }: {
   txData: IDatom[];
   txMeta?: { [key: string]: any; outlinerOp: string; } | undefined;
 }) {
+  // Return if outlinerOp doesnt exist
+  if (!txMeta || !txMeta.outlinerOp) return;
 
-  // Return early if we didn't save to DB
-  if (txMeta?.outlinerOp !== 'save-block') { return; }
-
-  const todoBlocks = blocks.filter(block => block.content && block.content.includes('TODO'));
-  if (todoBlocks.length > 0) {
-    console.log('TODO blocks detected:', todoBlocks);
-  } else {
-    console.log('No TODO blocks detected in the save-block operation.');
+  switch (txMeta.outlinerOp) {
+    case 'insert-blocks':
+      // Logic for insert-blocks
+      break;
+    case 'save-block':
+      // Logic for save-block, including getBlock if it's a new TODO
+      break;
+    case 'move-blocks':
+      // Logic for move-blocks
+      break;
+    default:
+      return;
   }
+
+  blocks.forEach((block, index) => {
+    // Log the block content and other properties that might be relevant
+    console.log(`Block index: ${index}, Content: ${block.content}`);
+    // If the block has children, log that information as well
+    if (block.children) {
+      console.log(`-- This block has children: ${block.children.length}`);
+    }
+  });
+
+  // printBlockStructure(blocks);
+
+  // const todoBlocks = blocks.filter(block => block.content && block.content.includes('TODO'));
+  // if (todoBlocks.length > 0) {
+  //   console.log('TODO blocks detected:', todoBlocks);
+  // } else {
+  //   console.log('No TODO blocks detected in the save-block operation.');
+  // }
+}
+
+// function processBlock(block, matchedBlocks) {
+
+// }
+
+function printBlockStructure(blocks: Array<BlockEntity | BlockUUIDTuple>, level: number = 0) {
+  blocks.forEach(item => {
+    if (Array.isArray(item)) {
+      // Handle BlockUUIDTuple
+      console.log(`${' '.repeat(level * 2)}- Block UUID: ${item[0]}`);
+      // You would need additional logic to fetch and print the block by UUID if necessary.
+    } else {
+      // Handle BlockEntity
+      console.log(`${' '.repeat(level * 2)}- ${item.content}`);
+      // Recursively print children blocks if they exist
+      if (item.children && item.children.length > 0) {
+        printBlockStructure(item.children, level + 1);
+      }
+    }
+  });
 }
 
 async function main() {
