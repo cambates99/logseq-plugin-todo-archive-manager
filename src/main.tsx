@@ -8,6 +8,7 @@ import "./index.css";
 
 import { logseq as PL } from "../package.json";
 import { UUID } from "crypto";
+import { processOnChangedEvent } from "./TaskProcessor";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -36,51 +37,9 @@ const settingsSchema: SettingSchemaDesc[] = [
 //     logseq.Editor.openInRightSidebar(currentBlock.uuid);
 // }
 
-// TODO: Add Doing and Done valdiation; TODO: Maybe check the beggning of the line to help performance?
-async function processOnChangedEvent({ blocks, txData, txMeta }: {
-  blocks: BlockEntity[];
-  txData: IDatom[];
-  txMeta?: { [key: string]: any; outlinerOp: string; } | undefined;
-}) {
-  // Return if outlinerOp doesnt exist
-  if (!txMeta || !txMeta.outlinerOp) return;
 
-  switch (txMeta.outlinerOp) {
-    case 'insert-blocks':
-      // Logic for insert-blocks
-      break;
-    case 'save-block':
-      // Logic for save-block, including getBlock if it's a new TODO
-      break;
-    case 'move-blocks':
-      // Logic for move-blocks
-      break;
-    default:
-      return;
-  }
 
-  blocks.forEach((block, index) => {
-    // Log the block content and other properties that might be relevant
-    console.log(`Block index: ${index}, Content: ${block.content}`);
-    // If the block has children, log that information as well
-    if (block.children) {
-      console.log(`-- This block has children: ${block.children.length}`);
-    }
-  });
 
-  // printBlockStructure(blocks);
-
-  // const todoBlocks = blocks.filter(block => block.content && block.content.includes('TODO'));
-  // if (todoBlocks.length > 0) {
-  //   console.log('TODO blocks detected:', todoBlocks);
-  // } else {
-  //   console.log('No TODO blocks detected in the save-block operation.');
-  // }
-}
-
-// function processBlock(block, matchedBlocks) {
-
-// }
 
 function printBlockStructure(blocks: Array<BlockEntity | BlockUUIDTuple>, level: number = 0) {
   blocks.forEach(item => {
