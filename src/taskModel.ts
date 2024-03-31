@@ -1,5 +1,7 @@
 // Task.ts
 
+import { EntityID } from "@logseq/libs/dist/LSPlugin";
+
 export enum TaskState {
   TODO = 'TODO',
   DOING = 'DOING',
@@ -19,6 +21,6 @@ export enum TaskPriority {
 export interface Task {
   state: TaskState;
   priority: TaskPriority | null; // Priority is nullable if no priority is set
-  // content: string;
-  // uuid: string;
+  uuid: string;
+  parentID: EntityID;
 }

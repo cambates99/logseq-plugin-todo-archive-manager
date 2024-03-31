@@ -43,7 +43,7 @@ function findTaskStateBlocks(blocks: BlockEntity[]): Task[] {
     if (match) {
       const state = match[2] as TaskState;
       const priority = match[3] as TaskPriority | null;
-      taskStateBlocks.push({ state: state, priority: priority });
+      taskStateBlocks.push({ state: state, priority: priority, uuid: block.uuid, parentID: block.parent.id });
 
       console.log(
         `Found a TaskState at index: ${index}, State: ${state}, Priority: ${priority}`
@@ -53,22 +53,17 @@ function findTaskStateBlocks(blocks: BlockEntity[]): Task[] {
   return taskStateBlocks;
 }
 
-function sortTasks(tasks: Task[]): Task[] {
-  // Define the sorting logic based on your criteria
-  // For example, if you're sorting by priority:
-  tasks.sort((a, b) => {
-    // Assuming that null priority comes last
-    if (!a.priority && b.priority) return 1;
-    if (a.priority && !b.priority) return -1;
-    if (a.priority && b.priority) {
-      // Compare the priorities directly if they're both non-null
-      return a.priority.localeCompare(b.priority);
+// TODO: Create function for single and multiple tasks
+async function sortTasksByPriority(tasks: Task[]): Promise<void> {
+  // First, group tasks by their parent ID to minimize the number of calls to logseq.Editor.getBlock
+  const tasksByParent: Record<string, Task[]> = {};
+  tasks.forEach((task) => {
+    if (tasksByParent[task.parentID]) {
+      tasksByParent[task.parentID].push(task);
+    } else {
+      tasksByParent[task.parentID] = [task];
     }
-    // If both priorities are null, keep the order as is
-    return 0;
   });
-
-  return tasks;
 }
 
 function blockDebugLog(blocks: BlockEntity[], state: string) {
