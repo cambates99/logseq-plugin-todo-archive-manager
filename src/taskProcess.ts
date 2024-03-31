@@ -32,7 +32,7 @@ export async function processOnChangedEvent({ blocks, txData, txMeta }: {
   }
 }
 
-function findTaskStateBlocks(blocks: BlockEntity[]){
+function findTaskStateBlocks(blocks: BlockEntity[]): Task[] {
   const taskStatePattern = Object.values(TaskState).join('|');
   const taskPriorityPattern = Object.keys(TaskPriority).join('|');
   const regexPattern = new RegExp(`^(#+\\s+)?(${taskStatePattern})\\s+(\\[#(${taskPriorityPattern})\\])?.*$`);
@@ -56,6 +56,7 @@ function findTaskStateBlocks(blocks: BlockEntity[]){
         }
     }
   });
+  return taskStateBlocks;
 }
 
 function blockDebugLog(blocks: BlockEntity[], state: string) {
