@@ -1,16 +1,16 @@
-import React, { useRef } from 'react'
-import { useAppVisible } from './utils'
+import React, { useRef } from 'react';
+import { useAppVisible } from './utils';
 
 function App() {
-  const innerRef = useRef<HTMLDivElement>(null)
-  const visible = useAppVisible()
+  const innerRef = useRef<HTMLDivElement>(null);
+  const visible = useAppVisible();
   if (visible) {
     return (
       <main
         className="backdrop-filter backdrop-blur-md fixed inset-0 flex items-center justify-center"
         onClick={e => {
           if (!innerRef.current?.contains(e.target as any)) {
-            window.logseq.hideMainUI()
+            window.logseq.hideMainUI();
           }
         }}
       >
@@ -18,9 +18,9 @@ function App() {
           Welcome to [[Logseq]] Plugins!
         </div>
       </main>
-    )
+    );
   }
-  return null
+  return null;
 }
 
-export default App
+export default App;

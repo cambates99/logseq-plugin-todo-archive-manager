@@ -1,24 +1,23 @@
-import '@logseq/libs'
+import '@logseq/libs';
 import {
   BlockEntity,
   BlockUUIDTuple,
   IDatom,
   SettingSchemaDesc,
-} from '@logseq/libs/dist/LSPlugin.user'
+} from '@logseq/libs/dist/LSPlugin.user';
 
-import React from 'react'
-import * as ReactDOM from 'react-dom/client'
-import App from './App'
-import './index.css'
+import React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-import { logseq as PL } from '../package.json'
-import { UUID } from 'crypto'
-import { processOnChangedEvent } from './taskProcessor'
+import { logseq as PL } from '../package.json';
+import { processOnChangedEvent } from './taskProcessor';
 
-// @ts-expect-error
-const css = (t, ...args) => String.raw(t, ...args)
+// @ts-expect-error this was in tempalte orignially
+const css = (t, ...args) => String.raw(t, ...args);
 
-const pluginId = PL.id
+const pluginId = PL.id;
 
 const settingsSchema: SettingSchemaDesc[] = [
   {
@@ -29,7 +28,7 @@ const settingsSchema: SettingSchemaDesc[] = [
     description: 'The hotkey to navigate to your Archive page.',
   },
   // ... other settings
-]
+];
 
 // async function handleBlockChange(currentBlockUuid: string) {
 
@@ -49,43 +48,43 @@ function printBlockStructure(
   blocks.forEach(item => {
     if (Array.isArray(item)) {
       // Handle BlockUUIDTuple
-      console.log(`${' '.repeat(level * 2)}- Block UUID: ${item[0]}`)
+      console.log(`${' '.repeat(level * 2)}- Block UUID: ${item[0]}`);
       // You would need additional logic to fetch and print the block by UUID if necessary.
     } else {
       // Handle BlockEntity
-      console.log(`${' '.repeat(level * 2)}- ${item.content}`)
+      console.log(`${' '.repeat(level * 2)}- ${item.content}`);
       // Recursively print children blocks if they exist
       if (item.children && item.children.length > 0) {
-        printBlockStructure(item.children, level + 1)
+        printBlockStructure(item.children, level + 1);
       }
     }
-  })
+  });
 }
 
 async function main() {
-  console.info(`#${pluginId}: MAIN`)
-  const root = ReactDOM.createRoot(document.getElementById('app')!)
+  console.info(`#${pluginId}: MAIN`);
+  const root = ReactDOM.createRoot(document.getElementById('app')!);
 
   // Use Logseq's API to load the settings schema
-  logseq.useSettingsSchema(settingsSchema)
+  logseq.useSettingsSchema(settingsSchema);
 
   // Wait for Logseq to provide the settings
-  await logseq.ready()
+  await logseq.ready();
 
   // Check if the settings have been loaded
-  const pageLocation = 'TODO Archive'
+  const pageLocation = 'TODO Archive';
 
   // Register the command with the hotkey from the settings to navigate to the page
   const navigateToArchiveHotkey = logseq.settings?.navigateToArchiveHotkey || {
     modifiers: ['ctrl', 'shift'],
     key: 'e',
-  }
+  };
 
-  const blockArray = []
+  const blockArray = [];
 
   logseq.DB.onChanged(e => {
-    processOnChangedEvent(e)
-  })
+    processOnChangedEvent(e.blocks, e.txData, e?.txMeta);
+  });
 
   logseq.App.registerCommandPalette(
     {
@@ -113,28 +112,28 @@ async function main() {
       // console.log('uuid: ', currentBlock?.uuid);
       // console.log('content: ', currentBlock?.content);
     }
-  )
+  );
 
   root.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
-  )
+  );
 
   function createModel() {
     return {
       show() {
-        logseq.showMainUI()
+        logseq.showMainUI();
       },
-    }
+    };
   }
 
-  logseq.provideModel(createModel())
+  logseq.provideModel(createModel());
   logseq.setMainUIInlineStyle({
     zIndex: 11,
-  })
+  });
 
-  const openIconName = 'template-plugin-open'
+  const openIconName = 'template-plugin-open';
 
   logseq.provideStyle(css`
     .${openIconName} {
@@ -146,14 +145,14 @@ async function main() {
     .${openIconName}:hover {
       opacity: 0.9;
     }
-  `)
+  `);
 
   logseq.App.registerUIItem('toolbar', {
     key: openIconName,
     template: `
       <div data-on-click="show" class="${openIconName}">⚙️</div>
     `,
-  })
+  });
 }
 
-logseq.ready(main).catch(console.error)
+logseq.ready(main).catch(console.error);
