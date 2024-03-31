@@ -8,7 +8,7 @@ import "./index.css";
 
 import { logseq as PL } from "../package.json";
 import { UUID } from "crypto";
-import { processOnChangedEvent } from "./TaskProcessor";
+import { processOnChangedEvent } from "./taskProcessor";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
