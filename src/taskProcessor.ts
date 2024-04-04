@@ -12,9 +12,10 @@ export async function processOnChangedEvent(
   txData: IDatom[],
   txMeta?: { [key: string]: any; outlinerOp: string } | undefined
 ) {
-  // Return if outlinerOp isn't in an expected state
+  // Return if outlinerOp isn't in an expected state or an undo
   if (
     !txMeta ||
+    txMeta["undo?"] ||
     !Object.values(OutlinerState).includes(txMeta.outlinerOp as OutlinerState)
   ) {
     return;
@@ -22,14 +23,18 @@ export async function processOnChangedEvent(
 
   blockDebugLog(blocks, txMeta.outlinerOp);
 
-  const taskStateBlocks = findTaskStateBlocks(blocks);
+  const taskStateBlocks = findTaskBlockStates(blocks);
   if (taskStateBlocks.length == 0) {
     console.log('No Task found for this block');
     return;
   }
+  // TODO: add a 'DONE' check here and if true, move to 'TODO Archive' without sorting
+  if (taskStateBlocks.length == 1) {
+    sortTaskByPriority(taskStateBlocks[0]);
+  }
 }
 
-function findTaskStateBlocks(blocks: BlockEntity[]): Task[] {
+function findTaskBlockStates(blocks: BlockEntity[]): Task[] {
   // Patterns for task states and priorities
   const taskStatePattern = Object.values(TaskState).join('|');
   const taskPriorityPattern = Object.keys(TaskPriority).join('|');
@@ -42,7 +47,7 @@ function findTaskStateBlocks(blocks: BlockEntity[]): Task[] {
     const match = regexPattern.exec(block.content);
     if (match) {
       const state = match[2] as TaskState;
-      const priority = match[3] as TaskPriority | null;
+      const priority = match[3] as TaskPriority;
       taskStateBlocks.push({ state: state, priority: priority, uuid: block.uuid, parentID: block.parent.id });
 
       console.log(
@@ -53,17 +58,57 @@ function findTaskStateBlocks(blocks: BlockEntity[]): Task[] {
   return taskStateBlocks;
 }
 
-// TODO: Create function for single and multiple tasks
+async function sortTaskByPriority(task: Task): Promise<void> {
+
+  const parentBlock = await logseq.Editor.getBlock(task.parentID, { includeChildren: true })
+  if (!parentBlock || !parentBlock.children) { return; }
+
+  const blockEntitiesOnly = parentBlock.children.filter((child): child is BlockEntity => 'content' in child);
+  const neighboringTaskBlocks = findTaskBlockStates(blockEntitiesOnly);
+  const sortedTasks = neighboringTaskBlocks.sort(compareTasks);
+
+  for (let i = 0; i < sortedTasks.length - 1; i++) {
+    await logseq.Editor.moveBlock(
+      sortedTasks[i].uuid,
+      sortedTasks[i + 1].uuid,
+      { before: true }
+    );
+  }
+}
+
 async function sortTasksByPriority(tasks: Task[]): Promise<void> {
   // First, group tasks by their parent ID to minimize the number of calls to logseq.Editor.getBlock
-  const tasksByParent: Record<string, Task[]> = {};
-  tasks.forEach((task) => {
-    if (tasksByParent[task.parentID]) {
-      tasksByParent[task.parentID].push(task);
-    } else {
-      tasksByParent[task.parentID] = [task];
-    }
-  });
+  // const tasksByParent: Record<string, Task[]> = {};
+  // tasks.forEach((task) => {
+  //   if (tasksByParent[task.parentID]) {
+  //     tasksByParent[task.parentID].push(task);
+  //   } else {
+  //     tasksByParent[task.parentID] = [task];
+  //   }
+  // });
+}
+
+function compareTasks(a: Task, b: Task): number {
+
+  const priorityOrder = {
+    [TaskPriority.A]: 1,
+    [TaskPriority.B]: 2,
+    [TaskPriority.C]: 3,
+    [TaskPriority.None]: 4
+  };
+
+  // Compare by priority first
+  const priorityCompare = priorityOrder[a.priority] - priorityOrder[b.priority];
+  if (priorityCompare !== 0) return priorityCompare;
+
+  // If priorities are the same, compare by state
+  const stateOrder = {
+    [TaskState.TODO]: 1,
+    [TaskState.DOING]: 2,
+    [TaskState.DONE]: 3,
+  };
+
+  return stateOrder[a.state] - stateOrder[b.state];
 }
 
 function blockDebugLog(blocks: BlockEntity[], state: string) {
@@ -74,7 +119,7 @@ function blockDebugLog(blocks: BlockEntity[], state: string) {
     console.log(`Content: ${block.content}`);
 
     if (block.children && block.children.length > 0) {
-      console.log(`This block has children: ${block.children.length}`);
+      console.log(`\tThis block has children: ${block.children.length}`);
     }
   });
 }

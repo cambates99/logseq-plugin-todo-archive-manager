@@ -41,26 +41,6 @@ const settingsSchema: SettingSchemaDesc[] = [
 //     logseq.Editor.openInRightSidebar(currentBlock.uuid);
 // }
 
-function printBlockStructure(
-  blocks: Array<BlockEntity | BlockUUIDTuple>,
-  level = 0
-) {
-  blocks.forEach(item => {
-    if (Array.isArray(item)) {
-      // Handle BlockUUIDTuple
-      console.log(`${' '.repeat(level * 2)}- Block UUID: ${item[0]}`);
-      // You would need additional logic to fetch and print the block by UUID if necessary.
-    } else {
-      // Handle BlockEntity
-      console.log(`${' '.repeat(level * 2)}- ${item.content}`);
-      // Recursively print children blocks if they exist
-      if (item.children && item.children.length > 0) {
-        printBlockStructure(item.children, level + 1);
-      }
-    }
-  });
-}
-
 async function main() {
   console.info(`#${pluginId}: MAIN`);
   const root = ReactDOM.createRoot(document.getElementById('app')!);
