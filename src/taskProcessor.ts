@@ -12,7 +12,7 @@ export async function processOnChangedEvent(
   txData: IDatom[],
   txMeta?: { [key: string]: any; outlinerOp: string } | undefined
 ) {
-  // Return if outlinerOp isn't in an expected state or an undo
+  // Return if outlinerOp isn't in an expected state or is an undo
   if (
     !txMeta ||
     txMeta["undo?"] ||
@@ -24,6 +24,7 @@ export async function processOnChangedEvent(
   blockDebugLog(blocks, txMeta.outlinerOp);
 
   const taskStateBlocks = findTaskBlockStates(blocks);
+  // console.log('taskStateBlocks length: ', taskStateBlocks.length);
   if (taskStateBlocks.length == 0) {
     console.log('No Task found for this block');
     return;
@@ -47,7 +48,7 @@ function findTaskBlockStates(blocks: BlockEntity[]): Task[] {
     const match = regexPattern.exec(block.content);
     if (match) {
       const state = match[2] as TaskState;
-      const priority = match[3] as TaskPriority;
+      const priority = match[3] as TaskPriority | undefined;
       taskStateBlocks.push({ state: state, priority: priority, uuid: block.uuid, parentID: block.parent.id });
 
       console.log(
@@ -64,16 +65,23 @@ async function sortTaskByPriority(task: Task): Promise<void> {
   if (!parentBlock || !parentBlock.children) { return; }
 
   const blockEntitiesOnly = parentBlock.children.filter((child): child is BlockEntity => 'content' in child);
-  const neighboringTaskBlocks = findTaskBlockStates(blockEntitiesOnly);
-  const sortedTasks = neighboringTaskBlocks.sort(compareTasks);
 
-  for (let i = 0; i < sortedTasks.length - 1; i++) {
-    await logseq.Editor.moveBlock(
-      sortedTasks[i].uuid,
-      sortedTasks[i + 1].uuid,
-      { before: true }
-    );
-  }
+
+  // TODO: Figure out sorting logic 
+  const sortedTasks = findTaskBlockStates(blockEntitiesOnly).sort(compareTasks);
+
+  taskDebugLog(sortedTasks);
+
+  sortedTasks.forEach((task, index) => {
+
+  })
+  // for (let i = 0; i < sortedTasks.length - 1; i++) {
+  //   await logseq.Editor.moveBlock(
+  //     sortedTasks[i].uuid,
+  //     sortedTasks[i + 1].uuid,
+  //     { before: true }
+  //   );
+  // }
 }
 
 async function sortTasksByPriority(tasks: Task[]): Promise<void> {
@@ -94,11 +102,13 @@ function compareTasks(a: Task, b: Task): number {
     [TaskPriority.A]: 1,
     [TaskPriority.B]: 2,
     [TaskPriority.C]: 3,
-    [TaskPriority.None]: 4
   };
 
+  const aPriority = a.priority ? priorityOrder[a.priority] : 4;
+  const bPriority = b.priority ? priorityOrder[b.priority] : 4;
+
   // Compare by priority first
-  const priorityCompare = priorityOrder[a.priority] - priorityOrder[b.priority];
+  const priorityCompare = aPriority - bPriority;
   if (priorityCompare !== 0) return priorityCompare;
 
   // If priorities are the same, compare by state
@@ -112,7 +122,7 @@ function compareTasks(a: Task, b: Task): number {
 }
 
 function blockDebugLog(blocks: BlockEntity[], state: string) {
-  console.log('------------------------------------------------------------');
+  console.log('--------------------------Block----------------------------------');
   console.log(`Total blocks received: ${blocks.length}, State: ${state}`);
   blocks.forEach((block, index) => {
     console.log(`Block index: ${index}, UUID: ${block.uuid}`);
@@ -121,5 +131,13 @@ function blockDebugLog(blocks: BlockEntity[], state: string) {
     if (block.children && block.children.length > 0) {
       console.log(`\tThis block has children: ${block.children.length}`);
     }
+  });
+}
+
+function taskDebugLog(tasks: Task[]) {
+  console.log('------------------------Task------------------------------------');
+  console.log(`Total task received: ${tasks.length}`);
+  tasks.forEach((task, index) => {
+    console.log(`\ttask index: ${index}, state: ${task.state}, priority: ${task.priority}`);
   });
 }

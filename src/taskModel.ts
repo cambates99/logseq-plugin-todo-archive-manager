@@ -16,12 +16,11 @@ export enum TaskPriority {
   A = '[#A]',
   B = '[#B]',
   C = '[#C]',
-  None = 'NONE'
 }
 
 export interface Task {
   state: TaskState;
-  priority: TaskPriority; // Priority is nullable if no priority is set
+  priority?: TaskPriority;
   uuid: string;
   parentID: EntityID;
 }
